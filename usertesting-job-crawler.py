@@ -13,9 +13,12 @@ from datetime import datetime
 from os import path
 from subprocess import check_output
 from distutils.spawn import find_executable
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
 
 
-EMAIL_TEMPLATE = "some stuff %s"
+EMAIL_TEMPLATE = "%s"
 
 def notify_send_email(settings, use_gmail=False):
     sender = settings.get('email_from')
@@ -41,15 +44,22 @@ def notify_send_email(settings, use_gmail=False):
                     server.login(username, password)
 
         subject = "Alert: New User Testing Tests Available"
-        headers = "\r\n".join(["from: %s" % sender,
-                               "subject: %s" % subject,
-                               "to: %s" % recipient,
-                               "mime-version: 1.0",
-                               "content-type: text/html"])
         message = EMAIL_TEMPLATE % "test"
-        content = headers + "\r\n\r\n" + message
 
-        server.sendmail(sender, recipient, content)
+        img_data = open('ut.png', 'rb').read()
+        msg = MIMEMultipart()
+        msg['Subject'] = sender
+        msg['From'] = subject
+        msg['To'] = recipient
+        msg['mime-version'] = "1.0"
+        msg['content-type'] = "text/html"
+
+        text = MIMEText(message)
+        msg.attach(text)
+        image = MIMEImage(img_data, name=os.path.basename('ut.png'))
+        msg.attach(image)
+
+        server.sendmail(sender, recipient, msg.as_string())
         server.quit()
     except Exception:
         logging.exception('Failed to send succcess e-mail.')
