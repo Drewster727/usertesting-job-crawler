@@ -6,8 +6,8 @@ var loadInProgress = false;
 var url = "https://www.usertesting.com/my_dashboard"
 
 var settings = {
-  username: '',
-  password: ''
+  username: 'mcminn.drew@gmail.com',
+  password: 'Swordfish77'
 }
 
 var page = require('webpage').create();
@@ -59,11 +59,14 @@ page.onLoadStarted = function() {
 page.onLoadFinished = function() {
   loadInProgress = false;
 };
-page.open(url);
+//page.open(url);
 var steps = [
+  function() {
+    page.open(url);
+  },
   function() { // Log in
     page.evaluate(function() {
-      console.log('On BESTMARK login page...');
+      console.log('On USERTESTING login page...');
       document.getElementById('user_email').value = window.callPhantom('username');
       document.getElementById('user_password').value = window.callPhantom('password');
       document.forms["new_user"].submit();
