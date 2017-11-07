@@ -1,13 +1,45 @@
+// CLI usage:
+// phantomjs [--ssl-protocol=any] usertesting-job-crawler.js [-v|--verbose]
+
 var system = require('system');
 var fs = require('fs');
 
-var VERBOSE = true;
+var VERBOSE = false;
 var loadInProgress = false;
-var url = "https://www.usertesting.com/my_dashboard"
 
-var settings = {
-  username: '',
-  password: ''
+// Calculate path of this file
+var PWD = '';
+var current_path_arr = system.args[0].split('/');
+if (current_path_arr.length == 1) {
+  PWD = '.';
+} else {
+  current_path_arr.pop();
+  PWD = current_path_arr.join('/');
+}
+
+// ...from command
+var configFile = PWD + '/config.json'
+system.args.forEach(function(val, i) {
+  if (val == '-v' || val == '--verbose') {
+    VERBOSE = true;
+  }
+  if (val == '--config') {
+    if (system.args.length == i) console.log('failed to set config - no option given');
+    else {
+      configFile = system.args[i + 1];
+    }
+  }
+});
+
+try {
+  var settings = JSON.parse(fs.read(configFile));
+  if (!settings.username || !settings.password || !settings.init_url) {
+    console.log('Missing username, password, and/or initial URL. Exiting...');
+    phantom.exit();
+  }
+} catch (e) {
+  console.log('Could not find ' + configFile);
+  phantom.exit();
 }
 
 var page = require('webpage').create();
@@ -33,18 +65,15 @@ page.onCallback = function(query, msg) {
   if (query == 'password') {
     return settings.password;
   }
-  if (query == 'fireClick') {
-    return function() {
-      return fireClick;
-    }
-  }
   if (query == 'report-jobs') {
-    if (VERBOSE) {
-      console.log('Found the following jobs: ' + msg);
-    } else {
-      console.log(msg);
-    }
-    phantom.exit();
+    if (VERBOSE) { console.log('Found the following jobs: ' + msg); }
+    else { console.log(msg); }
+    return;
+  }
+  if (query == 'report-no-jobs') {
+    if (VERBOSE) { console.log('No jobs found'); }
+    else { console.log('None'); }
+    return;
   }
   if (query == 'fatal-error') {
     console.log('Fatal error: ' + msg);
@@ -59,32 +88,32 @@ page.onLoadStarted = function() {
 page.onLoadFinished = function() {
   loadInProgress = false;
 };
-//page.open(url);
+
+page.open(settings.init_url);
 var steps = [
-  function() {
-    page.open(url);
-  },
   function() { // Log in
     page.evaluate(function() {
-      console.log('On USERTESTING login page...');
       document.getElementById('user_email').value = window.callPhantom('username');
       document.getElementById('user_password').value = window.callPhantom('password');
       document.forms["new_user"].submit();
     });
   },
   function() { // dashboard
+    page.render('ut.png');
+
     page.evaluate(function() {
-      var jobCount = document.querySelector(".available-test__table").querySelector('tbody').rows;
+      var tbl = document.querySelector(".available-test__table");
+      var jobs = tbl.querySelector('tbody').rows;
+      var jobCount = jobs.length;
+      var html = tbl.outerHTML;
+
       if (jobCount > 0) {
-        console.log(jobCount);
-        var x = 1;
+        window.callPhantom('report-jobs', html);
+      }
+      else {
+        window.callPhantom('report-no-jobs');
       }
     });
-    page.render('ut.png');
-  },
-  function() {
-    // send email
-    console.log('email');
   }
 ];
 
@@ -92,7 +121,7 @@ var i = 0;
 interval = setInterval(function() {
   if (loadInProgress) {
     return;
-  } // not ready yet...
+  }
   if (!steps[i] || typeof steps[i] != "function") {
     return phantom.exit();
   }
@@ -101,14 +130,3 @@ interval = setInterval(function() {
   i++;
 
 }, 300);
-
-var final = function() {
-  console.log('Requesting available jobs...');
-
-  page.onConsoleMessage = function(msg) {
-    if (msg == "EXIT") {
-      phantom.exit();
-    }
-    console.log(msg);
-  };
-};

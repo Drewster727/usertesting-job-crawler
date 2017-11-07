@@ -8,6 +8,7 @@ import json
 import logging
 import smtplib
 import sys
+import os
 
 from datetime import datetime
 from os import path
@@ -17,10 +18,10 @@ from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 
-
 EMAIL_TEMPLATE = "%s"
+SCREENSHOT = 'ut.png'
 
-def notify_send_email(settings, use_gmail=False):
+def notify_send_email(body, settings, use_gmail=False):
     sender = settings.get('email_from')
     recipient = settings.get('email_to', sender)  # If recipient isn't provided, send to self.
 
@@ -44,20 +45,20 @@ def notify_send_email(settings, use_gmail=False):
                     server.login(username, password)
 
         subject = "Alert: New User Testing Tests Available"
-        message = EMAIL_TEMPLATE % "test"
+        message = body
 
-        img_data = open('ut.png', 'rb').read()
         msg = MIMEMultipart()
-        msg['Subject'] = sender
-        msg['From'] = subject
-        msg['To'] = recipient
+        msg['Subject'] = subject
+        msg['From'] = sender
+        msg['To'] = ','.join(recipient)
         msg['mime-version'] = "1.0"
         msg['content-type'] = "text/html"
+        msg.attach(MIMEText(message, 'html'))
 
-        text = MIMEText(message)
-        msg.attach(text)
-        image = MIMEImage(img_data, name=os.path.basename('ut.png'))
-        msg.attach(image)
+        fp = open(SCREENSHOT, 'rb')
+        attachment = MIMEImage(fp.read())
+        fp.close()
+        msg.attach(attachment)
 
         server.sendmail(sender, recipient, msg.as_string())
         server.quit()
@@ -67,6 +68,10 @@ def notify_send_email(settings, use_gmail=False):
 
 def main(settings):
     try:
+        # remove any existing screenshots
+        if os.path.exists(SCREENSHOT):
+            os.remove(SCREENSHOT)
+
         # Run the phantom JS script - output will be formatted like 'July 20, 2015'
         # script_output = check_output(['phantomjs', '%s/usertesting-job-crawler.js' % pwd]).strip()
 
@@ -82,8 +87,6 @@ def main(settings):
             logging.info('No tests available.')
             return
 
-        // # TODO: get json output back from script_output, insert that into email with the image
-
     except ValueError:
         logging.critical("Couldn't convert output: {} from phantomJS script into a valid ... ".format(script_output))
         return
@@ -91,9 +94,9 @@ def main(settings):
         logging.critical("Something went wrong when trying to run usertesting-job-crawler.js. Is phantomjs is installed?")
         return
 
-    logging.info(msg + (' Sending email.' if not settings.get('no_email') else ' Not sending email.'))
+    #logging.info(msg + (' Sending email.' if not settings.get('no_email') else ' Not sending email.'))
     if not settings.get('no_email'):
-        notify_send_email(settings, use_gmail=settings.get('use_gmail'))
+        notify_send_email(script_output, settings, use_gmail=settings.get('use_gmail'))
 
 
 def _check_settings(config):
