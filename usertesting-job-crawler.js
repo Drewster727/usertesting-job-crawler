@@ -6,8 +6,8 @@ var loadInProgress = false;
 var url = "https://www.usertesting.com/my_dashboard"
 
 var settings = {
-  username: 'mcminn.drew@gmail.com',
-  password: 'Swordfish77'
+  username: '',
+  password: ''
 }
 
 var page = require('webpage').create();
