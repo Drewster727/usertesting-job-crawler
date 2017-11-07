@@ -36,7 +36,7 @@ page.onCallback = function(query, msg) {
   if (query == 'fireClick') {
     return function() {
       return fireClick;
-    } // @todo:david DON'T KNOW WHY THIS DOESN'T WORK! :( Just returns [Object object])
+    }
   }
   if (query == 'report-jobs') {
     if (VERBOSE) {

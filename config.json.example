@@ -1,0 +1,19 @@
+{
+  "logfile": "",
+
+  "email_from": "",
+  "email_to": [""],
+  "email_server": "",
+  "email_port": 25,
+  "email_username": "",
+  "email_password": "",
+
+  "username": "",
+  "password": "",
+  "init_url": "https://www.usertesting.com/my_dashboard",
+
+  "__comment": "Below are optional:",
+  "use_gmail": true,
+  "gmail_password": "<only required if use_gmail is true>",
+  "no_email": false
+}
