@@ -89,6 +89,10 @@ page.onLoadFinished = function() {
   loadInProgress = false;
 };
 
+page.viewportSize = {
+  width: 1920,
+  height: 1080
+};
 page.open(settings.init_url);
 var steps = [
   function() { // Log in
@@ -105,9 +109,20 @@ var steps = [
       var tbl = document.querySelector(".available-test__table");
       var jobs = tbl.querySelector('tbody').rows;
       var jobCount = jobs.length;
-      var html = tbl.outerHTML;
 
       if (jobCount > 0) {
+        var checkboxes = tbl.getElementsByClassName("input--checkbox");
+        while (checkboxes[0])
+          checkboxes[0].parentNode.removeChild(checkboxes[0]);
+
+        var buttons = tbl.getElementsByClassName("btn-group");
+        while (buttons[0])
+          buttons[0].parentNode.removeChild(buttons[0]);
+
+        var html = tbl.outerHTML;
+
+        // clean
+        html = html.replace(/This test requires completion on Macintosh or Windows. You are currently using PhantomJS on Linux. Please log into your account on Macintosh or Windows to view and accept this test./g, '');
         window.callPhantom('report-jobs', html);
       }
       else {
