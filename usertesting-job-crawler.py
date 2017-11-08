@@ -55,10 +55,11 @@ def notify_send_email(body, settings, use_gmail=False):
         msg['content-type'] = "text/html"
         msg.attach(MIMEText(message, 'html'))
 
-        fp = open(SCREENSHOT, 'rb')
-        attachment = MIMEImage(fp.read())
-        fp.close()
-        msg.attach(attachment)
+        if os.path.exists(SCREENSHOT):
+            fp = open(SCREENSHOT, 'rb')
+            attachment = MIMEImage(fp.read())
+            fp.close()
+            msg.attach(attachment)
 
         server.sendmail(sender, recipient, msg.as_string())
         server.quit()
@@ -83,7 +84,7 @@ def main(settings):
 
         script_output = check_output([cmd, '--ssl-protocol=any', '%s/usertesting-job-crawler.js' % pwd, '--config', settings.get('configfile')]).strip()
 
-        if script_output == 'None':
+        if not script_output or script_output == 'None':
             logging.info('No tests available.')
             return
 
