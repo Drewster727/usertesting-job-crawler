@@ -111,18 +111,12 @@ var steps = [
       var jobCount = jobs.length;
 
       if (jobCount > 0) {
-        var checkboxes = tbl.getElementsByClassName("input--checkbox");
-        while (checkboxes[0])
-          checkboxes[0].parentNode.removeChild(checkboxes[0]);
-
-        var buttons = tbl.getElementsByClassName("btn-group");
-        while (buttons[0])
-          buttons[0].parentNode.removeChild(buttons[0]);
+        var removals = tbl.querySelectorAll(".banner--error, .input--checkbox, .btn-group");
+        for (var i = 0; i < removals.length; i++) {
+          removals[i].parentNode.removeChild(removals[i]);
+        }
 
         var html = tbl.outerHTML;
-
-        // clean
-        html = html.replace(/This test requires completion on Macintosh or Windows. You are currently using PhantomJS on Linux. Please log into your account on Macintosh or Windows to view and accept this test./g, '');
         window.callPhantom('report-jobs', html);
       }
       else {
